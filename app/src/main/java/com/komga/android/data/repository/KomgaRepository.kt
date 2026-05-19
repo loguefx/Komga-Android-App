@@ -91,9 +91,9 @@ class KomgaRepository @Inject constructor(
     fun getServerUrl(): Flow<String> = preferencesDataStore.getServerUrl()
 
     // Series
-    suspend fun getSeries(page: Int = 0, size: Int = 20): Result<Pair<List<Series>, Boolean>> {
+    suspend fun getSeries(page: Int = 0, size: Int = 20, sort: String = "metadata.titleSort,asc"): Result<Pair<List<Series>, Boolean>> {
         return try {
-            val response = api.getSeries(page, size)
+            val response = api.getSeries(page, size, sort)
             if (response.isSuccessful) {
                 val paged = response.body()!!
                 Result.Success(Pair(paged.content.map { it.toDomain() }, !paged.last))

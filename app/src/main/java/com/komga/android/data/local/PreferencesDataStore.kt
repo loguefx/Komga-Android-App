@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -23,6 +24,7 @@ class PreferencesDataStore @Inject constructor(
         private val KEY_SERVER_URL = stringPreferencesKey("server_url")
         private val KEY_EMAIL = stringPreferencesKey("email")
         private val KEY_PASSWORD = stringPreferencesKey("password")
+        private val KEY_DEFAULT_RTL = booleanPreferencesKey("default_rtl")
     }
 
     fun getServerUrl(): Flow<String> = context.dataStore.data.map { prefs ->
@@ -50,6 +52,14 @@ class PreferencesDataStore @Inject constructor(
             prefs[KEY_EMAIL] = email
             prefs[KEY_PASSWORD] = password
         }
+    }
+
+    fun getDefaultRtl(): Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[KEY_DEFAULT_RTL] ?: false
+    }
+
+    suspend fun saveDefaultRtl(enabled: Boolean) {
+        context.dataStore.edit { prefs -> prefs[KEY_DEFAULT_RTL] = enabled }
     }
 
     suspend fun clearLoginInfo() {

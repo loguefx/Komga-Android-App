@@ -34,12 +34,14 @@ import com.komga.android.ui.library.LibraryScreen
 import com.komga.android.ui.login.LoginScreen
 import com.komga.android.ui.reader.ReaderScreen
 import com.komga.android.ui.series.SeriesDetailScreen
+import com.komga.android.ui.settings.SettingsScreen
 
 sealed class Screen(val route: String) {
     object Login : Screen("login")
     object Home : Screen("home")
     object Library : Screen("library")
     object Favorites : Screen("favorites")
+    object Settings : Screen("settings")
     object SeriesDetail : Screen("series/{seriesId}") {
         fun createRoute(seriesId: String) = "series/$seriesId"
     }
@@ -137,6 +139,20 @@ fun KomgaNavGraph(
                     },
                     onBookClick = { bookId ->
                         navController.navigate(Screen.Reader.createRoute(bookId))
+                    },
+                    onSettingsClick = {
+                        navController.navigate(Screen.Settings.route)
+                    }
+                )
+            }
+
+            composable(Screen.Settings.route) {
+                SettingsScreen(
+                    onBack = { navController.popBackStack() },
+                    onLogout = {
+                        navController.navigate(Screen.Login.route) {
+                            popUpTo(0) { inclusive = true }
+                        }
                     }
                 )
             }

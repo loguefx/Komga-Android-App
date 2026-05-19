@@ -4,19 +4,65 @@
     android:height="48dp"
     android:viewportWidth="48"
     android:viewportHeight="48">
+
+    <!-- Navy background -->
     <path
-        android:fillColor="#121212"
+        android:fillColor="#1A1F3C"
         android:pathData="M0,0 L48,0 L48,48 L0,48 Z"/>
-    <path
-        android:fillColor="#2979FF"
-        android:pathData="M10,6 L38,6 C39.1,6 40,6.9 40,8 L40,40 C40,41.1 39.1,42 38,42 L10,42 C8.9,42 8,41.1 8,40 L8,8 C8,6.9 8.9,6 10,6 Z"/>
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M13,14 L35,14 L35,17 L13,17 Z"/>
+
+    <!-- Left page -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M13,21 L35,21 L35,24 L13,24 Z"/>
+        android:pathData="M7,12 L23,10 L23,38 L7,40 Z"/>
+
+    <!-- Right page -->
     <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M13,28 L26,28 L26,31 L13,31 Z"/>
+        android:fillColor="#F0F0F0"
+        android:pathData="M25,10 L41,12 L41,40 L25,38 Z"/>
+
+    <!-- Bottom curve -->
+    <path
+        android:fillColor="#CCCCCC"
+        android:pathData="M7,40 Q24,44 41,40 L41,41.5 Q24,45.5 7,41.5 Z"/>
+
+    <!-- Panel lines – left page (simplified) -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#C0C0C0"
+        android:strokeWidth="0.9"
+        android:pathData="M10,14 L21,12.5 L21,23 L10,24.5 Z"/>
+
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#C0C0C0"
+        android:strokeWidth="0.9"
+        android:pathData="M10,26 L15.5,25 L15.5,35.5 L10,36 Z"/>
+
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#C0C0C0"
+        android:strokeWidth="0.9"
+        android:pathData="M17,24.5 L21,23.5 L21,35 L17,35.5 Z"/>
+
+    <!-- K stem (purple) -->
+    <path
+        android:fillColor="#7C5CFC"
+        android:pathData="M27,12 L30,12 L30,36 L27,36 Z"/>
+
+    <!-- K upper arm (blue) -->
+    <path
+        android:fillColor="#4D8EFF"
+        android:pathData="M30,24 L38,12.5 L35,12 L28,23 Z"/>
+
+    <!-- K lower arm (cyan) -->
+    <path
+        android:fillColor="#00CFEE"
+        android:pathData="M30,24 L38,35.5 L35,36 L28,25 Z"/>
+
+    <!-- Spine glow -->
+    <path
+        android:fillColor="#00D4FF"
+        android:fillAlpha="0.85"
+        android:pathData="M23,9 L25,9 L25,38 L23,38 Z"/>
+
 </vector>

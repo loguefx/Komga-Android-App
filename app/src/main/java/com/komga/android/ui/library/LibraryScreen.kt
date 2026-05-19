@@ -15,8 +15,11 @@ import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material.icons.outlined.Clear
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -81,6 +84,33 @@ fun LibraryScreen(
                             fontWeight = FontWeight.Bold,
                             style = MaterialTheme.typography.titleLarge
                         )
+                    },
+                    actions = {
+                        // Sort button + dropdown
+                        androidx.compose.runtime.Box {
+                            IconButton(onClick = viewModel::toggleSortMenu) {
+                                Icon(Icons.Default.Sort, contentDescription = "Sort")
+                            }
+                            DropdownMenu(
+                                expanded = uiState.showSortMenu,
+                                onDismissRequest = viewModel::toggleSortMenu
+                            ) {
+                                SortOption.entries.forEach { option ->
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                text = option.label,
+                                                color = if (uiState.sortOption == option)
+                                                    MaterialTheme.colorScheme.primary
+                                                else
+                                                    MaterialTheme.colorScheme.onSurface
+                                            )
+                                        },
+                                        onClick = { viewModel.onSortSelected(option) }
+                                    )
+                                }
+                            }
+                        }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = MaterialTheme.colorScheme.background

@@ -11,8 +11,10 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -38,6 +40,7 @@ import com.komga.android.ui.components.SeriesCard
 fun HomeScreen(
     onSeriesClick: (String) -> Unit,
     onBookClick: (String) -> Unit,
+    onSettingsClick: () -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -70,6 +73,11 @@ fun HomeScreen(
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary
                         )
+                    },
+                    actions = {
+                        IconButton(onClick = onSettingsClick) {
+                            Icon(Icons.Outlined.Settings, contentDescription = "Settings")
+                        }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = MaterialTheme.colorScheme.background

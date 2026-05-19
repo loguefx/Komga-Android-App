@@ -13,11 +13,21 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+enum class SortOption(val label: String, val apiSort: String) {
+    TITLE("Title A–Z", "metadata.titleSort,asc"),
+    TITLE_DESC("Title Z–A", "metadata.titleSort,desc"),
+    RECENTLY_ADDED("Recently Added", "createdDate,desc"),
+    OLDEST_ADDED("Oldest Added", "createdDate,asc"),
+    RECENTLY_UPDATED("Recently Updated", "lastModifiedDate,desc")
+}
+
 data class LibraryUiState(
     val isLoading: Boolean = false,
     val isLoadingMore: Boolean = false,
     val seriesList: List<Pair<Series, String>> = emptyList(),
     val searchQuery: String = "",
+    val sortOption: SortOption = SortOption.TITLE,
+    val showSortMenu: Boolean = false,
     val errorMessage: String? = null,
     val hasMore: Boolean = false,
     val currentPage: Int = 0
@@ -39,11 +49,21 @@ class LibraryViewModel @Inject constructor(
         _uiState.update { it.copy(searchQuery = query) }
     }
 
+    fun onSortSelected(sort: SortOption) {
+        _uiState.update { it.copy(sortOption = sort, showSortMenu = false) }
+        loadSeries(reset = true)
+    }
+
+    fun toggleSortMenu() {
+        _uiState.update { it.copy(showSortMenu = !it.showSortMenu) }
+    }
+
     fun loadSeries(reset: Boolean = false) {
         val state = _uiState.value
         if (state.isLoading || state.isLoadingMore) return
 
         val page = if (reset) 0 else state.currentPage + 1
+        val sort = state.sortOption.apiSort
 
         viewModelScope.launch {
             _uiState.update {
@@ -51,7 +71,7 @@ class LibraryViewModel @Inject constructor(
                 else it.copy(isLoadingMore = true)
             }
 
-            when (val result = repository.getSeries(page = page, size = 30)) {
+            when (val result = repository.getSeries(page = page, size = 30, sort = sort)) {
                 is Result.Success -> {
                     val (series, hasMore) = result.data
                     val seriesWithUrls = series.map { s ->
