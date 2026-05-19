@@ -12,6 +12,7 @@ import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -33,6 +34,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -52,6 +54,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.komga.android.ui.components.ErrorMessage
 import com.komga.android.ui.components.LoadingIndicator
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -76,9 +79,11 @@ fun ReaderScreen(
             ErrorMessage(message = uiState.errorMessage ?: "Error loading book")
         }
         uiState.pageUrls.isNotEmpty() -> {
+            val scope = rememberCoroutineScope()
+            val pageCount = uiState.pageUrls.size
             val pagerState = rememberPagerState(
                 initialPage = uiState.currentPage,
-                pageCount = { uiState.pageUrls.size }
+                pageCount = { pageCount }
             )
 
             LaunchedEffect(pagerState) {
@@ -91,12 +96,8 @@ fun ReaderScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(Color.Black)
-                    .pointerInput(Unit) {
-                        detectTapGestures(
-                            onTap = { viewModel.toggleControls() }
-                        )
-                    }
             ) {
+                // Main pager
                 HorizontalPager(
                     state = pagerState,
                     modifier = Modifier.fillMaxSize()
@@ -107,7 +108,50 @@ fun ReaderScreen(
                     )
                 }
 
-                // Controls overlay - top bar
+                // LEFT tap zone – previous page (entire left 38% of screen)
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .fillMaxWidth(0.38f)
+                        .align(Alignment.CenterStart)
+                        .pointerInput(pagerState) {
+                            detectTapGestures {
+                                val prev = pagerState.currentPage - 1
+                                if (prev >= 0) {
+                                    scope.launch { pagerState.animateScrollToPage(prev) }
+                                }
+                            }
+                        }
+                )
+
+                // RIGHT tap zone – next page (entire right 38% of screen)
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .fillMaxWidth(0.38f)
+                        .align(Alignment.CenterEnd)
+                        .pointerInput(pagerState) {
+                            detectTapGestures {
+                                val next = pagerState.currentPage + 1
+                                if (next < pageCount) {
+                                    scope.launch { pagerState.animateScrollToPage(next) }
+                                }
+                            }
+                        }
+                )
+
+                // CENTER tap zone – toggle controls (middle 24%)
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .fillMaxWidth(0.24f)
+                        .align(Alignment.Center)
+                        .pointerInput(Unit) {
+                            detectTapGestures { viewModel.toggleControls() }
+                        }
+                )
+
+                // Top bar – shown/hidden with controls
                 AnimatedVisibility(
                     visible = uiState.showControls,
                     enter = fadeIn() + slideInVertically(),
@@ -147,36 +191,28 @@ fun ReaderScreen(
                     )
                 }
 
-                // Progress bar at bottom
-                AnimatedVisibility(
-                    visible = uiState.showControls,
-                    enter = fadeIn() + slideInVertically { it },
-                    exit = fadeOut() + slideOutVertically { it },
-                    modifier = Modifier.align(Alignment.BottomCenter)
+                // Bottom progress bar – always visible
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.BottomCenter)
+                        .background(Color.Black.copy(alpha = 0.55f))
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(Color.Black.copy(alpha = 0.7f))
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        LinearProgressIndicator(
-                            progress = {
-                                if (uiState.pageUrls.isNotEmpty()) {
-                                    (uiState.currentPage + 1f) / uiState.pageUrls.size
-                                } else 0f
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            color = MaterialTheme.colorScheme.primary,
-                            trackColor = Color.White.copy(alpha = 0.3f)
-                        )
-                        Text(
-                            text = "${uiState.currentPage + 1} of ${uiState.pageUrls.size} pages",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = Color.White.copy(alpha = 0.7f)
-                        )
-                    }
+                    LinearProgressIndicator(
+                        progress = {
+                            if (pageCount > 0) (uiState.currentPage + 1f) / pageCount else 0f
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        color = MaterialTheme.colorScheme.primary,
+                        trackColor = Color.White.copy(alpha = 0.3f)
+                    )
+                    Text(
+                        text = "${uiState.currentPage + 1} of $pageCount pages",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White.copy(alpha = 0.85f)
+                    )
                 }
             }
         }

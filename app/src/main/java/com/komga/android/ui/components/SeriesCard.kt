@@ -61,7 +61,7 @@ fun SeriesCard(
         )
         if (series.booksCount > 0) {
             Text(
-                text = "${series.booksCount} book${if (series.booksCount != 1) "s" else ""}",
+                text = "${series.booksCount} chapter${if (series.booksCount != 1) "s" else ""}",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                 modifier = Modifier.padding(start = 2.dp)

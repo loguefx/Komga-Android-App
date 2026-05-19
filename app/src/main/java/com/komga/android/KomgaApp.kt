@@ -1,7 +1,16 @@
 package com.komga.android
 
 import android.app.Application
+import coil.ImageLoader
+import coil.ImageLoaderFactory
 import dagger.hilt.android.HiltAndroidApp
+import javax.inject.Inject
 
 @HiltAndroidApp
-class KomgaApp : Application()
+class KomgaApp : Application(), ImageLoaderFactory {
+
+    @Inject
+    lateinit var imageLoader: ImageLoader
+
+    override fun newImageLoader(): ImageLoader = imageLoader
+}

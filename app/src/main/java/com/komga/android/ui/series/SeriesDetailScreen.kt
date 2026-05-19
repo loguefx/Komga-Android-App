@@ -161,7 +161,7 @@ fun SeriesDetailScreen(
                                 .padding(horizontal = 16.dp, vertical = 8.dp),
                             horizontalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            StatChip(label = "Total", value = "${series.booksCount}")
+                            StatChip(label = "Chapters", value = "${series.booksCount}")
                             StatChip(label = "Read", value = "${series.booksReadCount}")
                             StatChip(label = "Unread", value = "${series.booksUnreadCount}")
                             if (series.status.isNotBlank()) {
@@ -199,10 +199,10 @@ fun SeriesDetailScreen(
                         }
                     }
 
-                    // Books section header
+                    // Chapters section header
                     item {
                         Text(
-                            text = "Books (${series.booksCount})",
+                            text = "Chapters (${series.booksCount})",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold,
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
@@ -272,7 +272,14 @@ private fun BookListItem(
                 .clip(RoundedCornerShape(4.dp))
         )
         Spacer(modifier = Modifier.width(12.dp))
-        Column(modifier = Modifier.weight(1f)) {
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            // Chapter number badge
+            Text(
+                text = "Chapter ${book.number.let { if (it == it.toLong().toFloat()) it.toLong().toString() else it.toString() }}",
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
             Text(
                 text = book.name,
                 style = MaterialTheme.typography.bodyMedium,
@@ -281,16 +288,29 @@ private fun BookListItem(
                 overflow = TextOverflow.Ellipsis
             )
             Text(
-                text = "#${book.number.toInt()} • ${book.pagesCount} pages",
+                text = "${book.pagesCount} pages",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
             )
-            if (book.currentPage > 0) {
-                Text(
-                    text = if (book.completed) "Completed" else "Page ${book.currentPage} of ${book.pagesCount}",
+            when {
+                book.completed -> Text(
+                    text = "✓ Completed",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary
                 )
+                book.currentPage > 0 -> {
+                    Text(
+                        text = "Page ${book.currentPage} of ${book.pagesCount}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.tertiary
+                    )
+                    androidx.compose.material3.LinearProgressIndicator(
+                        progress = { book.currentPage.toFloat() / book.pagesCount.coerceAtLeast(1) },
+                        modifier = Modifier.fillMaxWidth(),
+                        color = MaterialTheme.colorScheme.tertiary,
+                        trackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
+                    )
+                }
             }
         }
     }
