@@ -3,13 +3,15 @@ name: Build APK
 on:
   push:
     branches: [ main, master ]
+    tags:
+      - 'v*.*.*'
   pull_request:
     branches: [ main, master ]
   workflow_dispatch:
 
 jobs:
   build:
-    name: Build Debug APK
+    name: Build APK
     runs-on: ubuntu-latest
 
     steps:
@@ -39,22 +41,64 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
+      - name: Get version name
+        id: version
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          else
+            echo "version=dev-$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          fi
+
       - name: Build Debug APK
         run: ./gradlew assembleDebug --no-daemon
-
-      - name: Upload Debug APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: komga-android-debug
-          path: app/build/outputs/apk/debug/app-debug.apk
-          retention-days: 30
 
       - name: Build Release APK (unsigned)
         run: ./gradlew assembleRelease --no-daemon
 
-      - name: Upload Release APK
+      - name: Rename APKs
+        run: |
+          mv app/build/outputs/apk/debug/app-debug.apk \
+             app/build/outputs/apk/debug/komga-android-${{ steps.version.outputs.version }}-debug.apk
+          mv app/build/outputs/apk/release/app-release-unsigned.apk \
+             app/build/outputs/apk/release/komga-android-${{ steps.version.outputs.version }}-release-unsigned.apk
+
+      - name: Upload Debug APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: komga-android-release-unsigned
-          path: app/build/outputs/apk/release/app-release-unsigned.apk
+          name: komga-android-${{ steps.version.outputs.version }}-debug
+          path: app/build/outputs/apk/debug/komga-android-${{ steps.version.outputs.version }}-debug.apk
           retention-days: 30
+
+      - name: Upload Release APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: komga-android-${{ steps.version.outputs.version }}-release-unsigned
+          path: app/build/outputs/apk/release/komga-android-${{ steps.version.outputs.version }}-release-unsigned.apk
+          retention-days: 30
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Komga Android ${{ steps.version.outputs.version }}
+          body: |
+            ## Komga Android App ${{ steps.version.outputs.version }}
+
+            ### Installation
+            1. Download `komga-android-*-debug.apk` below
+            2. Transfer to your Android device
+            3. Enable **Install unknown apps** in Android Settings
+            4. Open the APK to install
+
+            ### What's included
+            - **Debug APK** — ready to install, includes logging
+            - **Release APK (unsigned)** — optimized build, requires signing before distribution
+
+            ### First launch
+            Enter your Komga server URL (e.g. `http://192.168.1.100:25600`), email, and password.
+          files: |
+            app/build/outputs/apk/debug/komga-android-${{ steps.version.outputs.version }}-debug.apk
+            app/build/outputs/apk/release/komga-android-${{ steps.version.outputs.version }}-release-unsigned.apk
+          draft: false
+          prerelease: false
