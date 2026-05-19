@@ -6,6 +6,8 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+
+enum class ThemeMode { SYSTEM, LIGHT, DARK, AMOLED }
 import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
@@ -25,6 +27,7 @@ class PreferencesDataStore @Inject constructor(
         private val KEY_EMAIL = stringPreferencesKey("email")
         private val KEY_PASSWORD = stringPreferencesKey("password")
         private val KEY_DEFAULT_RTL = booleanPreferencesKey("default_rtl")
+        private val KEY_THEME_MODE = stringPreferencesKey("theme_mode")
     }
 
     fun getServerUrl(): Flow<String> = context.dataStore.data.map { prefs ->
@@ -60,6 +63,14 @@ class PreferencesDataStore @Inject constructor(
 
     suspend fun saveDefaultRtl(enabled: Boolean) {
         context.dataStore.edit { prefs -> prefs[KEY_DEFAULT_RTL] = enabled }
+    }
+
+    fun getThemeMode(): Flow<ThemeMode> = context.dataStore.data.map { prefs ->
+        ThemeMode.entries.firstOrNull { it.name == prefs[KEY_THEME_MODE] } ?: ThemeMode.SYSTEM
+    }
+
+    suspend fun saveThemeMode(mode: ThemeMode) {
+        context.dataStore.edit { prefs -> prefs[KEY_THEME_MODE] = mode.name }
     }
 
     suspend fun clearLoginInfo() {

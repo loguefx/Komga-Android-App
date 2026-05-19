@@ -4,6 +4,11 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import androidx.glance.appwidget.GlanceAppWidgetManager
+import androidx.glance.appwidget.state.updateAppWidgetState
+import com.komga.android.widget.KomgaWidget
+import com.komga.android.widget.WIDGET_KEY_BOOKS
+import com.komga.android.widget.WIDGET_PREFS
 import androidx.core.app.NotificationCompat
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
@@ -81,7 +86,36 @@ class NewChapterWorker @AssistedInject constructor(
             )
         }
 
+        // Update widget with current On Deck books
+        updateWidget(context)
+
         return Result.success()
+    }
+
+    private suspend fun updateWidget(context: Context) {
+        try {
+            val onDeckResult = repository.getBooksOnDeck(size = 5)
+            if (onDeckResult is RepoResult.Success) {
+                val titles = onDeckResult.data.map { book ->
+                    if (book.seriesTitle.isNotBlank()) {
+                        "${book.seriesTitle} #${book.number.let { n ->
+                            if (n == n.toLong().toFloat()) n.toLong().toString() else n.toString()
+                        }}"
+                    } else book.name
+                }
+                // Persist for GlanceWidget to read
+                context.getSharedPreferences(WIDGET_PREFS, Context.MODE_PRIVATE)
+                    .edit()
+                    .putString(WIDGET_KEY_BOOKS, titles.joinToString("\n"))
+                    .apply()
+
+                // Trigger widget refresh
+                val manager = GlanceAppWidgetManager(context)
+                manager.getGlanceIds(KomgaWidget::class.java).forEach { id ->
+                    KomgaWidget().update(context, id)
+                }
+            }
+        } catch (_: Exception) { /* Widget update failures are non-critical */ }
     }
 
     private fun showNotification(

@@ -13,7 +13,9 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.komga.android.data.local.PreferencesDataStore
+import com.komga.android.data.local.ThemeMode
 import com.komga.android.notification.NewChapterWorker
 import com.komga.android.ui.navigation.KomgaNavGraph
 import com.komga.android.ui.navigation.Screen
@@ -61,7 +63,9 @@ class MainActivity : ComponentActivity() {
         scheduleChapterCheckWorker()
 
         setContent {
-            KomgaTheme {
+            val themeMode by preferencesDataStore.getThemeMode()
+                .collectAsStateWithLifecycle(initialValue = ThemeMode.SYSTEM)
+            KomgaTheme(themeMode = themeMode) {
                 KomgaNavGraph(startDestination = startDestination)
             }
         }

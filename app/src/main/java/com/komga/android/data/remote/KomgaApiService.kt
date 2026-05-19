@@ -3,6 +3,8 @@ package com.komga.android.data.remote
 import com.komga.android.data.remote.dto.BookDto
 import com.komga.android.data.remote.dto.LibraryDto
 import com.komga.android.data.remote.dto.PagedBookDto
+import com.komga.android.data.remote.dto.PagedCollectionDto
+import com.komga.android.data.remote.dto.PagedReadListDto
 import com.komga.android.data.remote.dto.PagedSeriesDto
 import com.komga.android.data.remote.dto.ReadProgressUpdateDto
 import com.komga.android.data.remote.dto.SeriesDto
@@ -113,4 +115,32 @@ interface KomgaApiService {
     suspend fun markSeriesRead(
         @Path("seriesId") seriesId: String
     ): Response<Unit>
+
+    // Collections
+    @GET("api/v1/collections")
+    suspend fun getCollections(
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 100
+    ): Response<PagedCollectionDto>
+
+    @GET("api/v1/series")
+    suspend fun getSeriesByCollection(
+        @Query("collectionId") collectionId: String,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 50
+    ): Response<PagedSeriesDto>
+
+    // Reading Lists
+    @GET("api/v1/readlists")
+    suspend fun getReadLists(
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 100
+    ): Response<PagedReadListDto>
+
+    @GET("api/v1/books")
+    suspend fun getBooksByReadList(
+        @Query("readListId") readListId: String,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 100
+    ): Response<PagedBookDto>
 }

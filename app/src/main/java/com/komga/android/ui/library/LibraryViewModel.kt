@@ -7,8 +7,11 @@ import com.komga.android.data.repository.Result
 import com.komga.android.domain.model.Series
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -30,7 +33,8 @@ data class LibraryUiState(
     val showSortMenu: Boolean = false,
     val errorMessage: String? = null,
     val hasMore: Boolean = false,
-    val currentPage: Int = 0
+    val currentPage: Int = 0,
+    val favoriteIds: Set<String> = emptySet()
 )
 
 @HiltViewModel
@@ -43,6 +47,10 @@ class LibraryViewModel @Inject constructor(
 
     init {
         loadSeries(reset = true)
+        viewModelScope.launch {
+            repository.getFavorites().map { list -> list.map { it.seriesId }.toSet() }
+                .collect { ids -> _uiState.update { it.copy(favoriteIds = ids) } }
+        }
     }
 
     fun onSearchQueryChange(query: String) {
@@ -110,5 +118,13 @@ class LibraryViewModel @Inject constructor(
 
     fun refresh() {
         loadSeries(reset = true)
+    }
+
+    fun toggleFavorite(series: Series) {
+        viewModelScope.launch {
+            val isFav = _uiState.value.favoriteIds.contains(series.id)
+            if (isFav) repository.removeFavorite(series.id)
+            else repository.addFavorite(series)
+        }
     }
 }

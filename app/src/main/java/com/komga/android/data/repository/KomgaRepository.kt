@@ -8,7 +8,11 @@ import com.komga.android.data.remote.dto.LibraryDto
 import com.komga.android.data.remote.dto.ReadProgressUpdateDto
 import com.komga.android.data.remote.dto.SeriesDto
 import com.komga.android.data.remote.dto.BookDto
+import com.komga.android.data.remote.dto.CollectionDto
+import com.komga.android.data.remote.dto.ReadListDto
 import com.komga.android.domain.model.Book
+import com.komga.android.domain.model.Collection
+import com.komga.android.domain.model.ReadList
 import com.komga.android.domain.model.Series
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -276,6 +280,52 @@ class KomgaRepository @Inject constructor(
         favoriteDao.deleteFavoriteById(seriesId)
     }
 
+    // Collections
+    suspend fun getCollections(): Result<List<Collection>> {
+        return try {
+            val response = api.getCollections()
+            if (response.isSuccessful)
+                Result.Success(response.body()!!.content.map { it.toDomain() })
+            else Result.Error("Failed to load collections: ${response.code()}", response.code())
+        } catch (e: Exception) {
+            Result.Error(e.message ?: "Failed to load collections")
+        }
+    }
+
+    suspend fun getSeriesByCollection(collectionId: String, page: Int = 0): Result<List<Series>> {
+        return try {
+            val response = api.getSeriesByCollection(collectionId, page)
+            if (response.isSuccessful)
+                Result.Success(response.body()!!.content.map { it.toDomain() })
+            else Result.Error("Failed: ${response.code()}", response.code())
+        } catch (e: Exception) {
+            Result.Error(e.message ?: "Failed to load collection series")
+        }
+    }
+
+    // Reading Lists
+    suspend fun getReadLists(): Result<List<ReadList>> {
+        return try {
+            val response = api.getReadLists()
+            if (response.isSuccessful)
+                Result.Success(response.body()!!.content.map { it.toDomain() })
+            else Result.Error("Failed to load reading lists: ${response.code()}", response.code())
+        } catch (e: Exception) {
+            Result.Error(e.message ?: "Failed to load reading lists")
+        }
+    }
+
+    suspend fun getBooksByReadList(readListId: String, page: Int = 0): Result<List<Book>> {
+        return try {
+            val response = api.getBooksByReadList(readListId, page)
+            if (response.isSuccessful)
+                Result.Success(response.body()!!.content.map { it.toDomain() })
+            else Result.Error("Failed: ${response.code()}", response.code())
+        } catch (e: Exception) {
+            Result.Error(e.message ?: "Failed to load reading list books")
+        }
+    }
+
     // URL helpers
     suspend fun buildThumbnailUrl(seriesId: String): String {
         val serverUrl = preferencesDataStore.getServerUrl().first()
@@ -306,6 +356,19 @@ private fun SeriesDto.toDomain(): Series = Series(
     genres = metadata.genres,
     publisher = metadata.publisher,
     language = metadata.language
+)
+
+private fun CollectionDto.toDomain() = Collection(
+    id = id,
+    name = name,
+    seriesCount = seriesIds.size,
+    ordered = ordered
+)
+
+private fun ReadListDto.toDomain() = ReadList(
+    id = id,
+    name = name,
+    bookCount = bookIds.size
 )
 
 private fun BookDto.toDomain(): Book = Book(

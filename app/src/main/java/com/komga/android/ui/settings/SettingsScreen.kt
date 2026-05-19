@@ -15,11 +15,15 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material.icons.filled.BrightnessAuto
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -35,9 +39,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.komga.android.data.local.ThemeMode
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -54,20 +60,12 @@ fun SettingsScreen(
             title = { Text("Log out") },
             text = { Text("You will need to re-enter your server URL and credentials to sign in again.") },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        showLogoutDialog = false
-                        viewModel.logout()
-                        onLogout()
-                    }
-                ) {
+                TextButton(onClick = { showLogoutDialog = false; viewModel.logout(); onLogout() }) {
                     Text("Log out", color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showLogoutDialog = false }) {
-                    Text("Cancel")
-                }
+                TextButton(onClick = { showLogoutDialog = false }) { Text("Cancel") }
             }
         )
     }
@@ -92,9 +90,32 @@ fun SettingsScreen(
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // ── READING section ──────────────────────────────────────────
-            SettingsSectionLabel("Reading")
+            // ── APPEARANCE ────────────────────────────────────────────────
+            SettingsSectionLabel("Appearance")
+            SettingsCard {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("Theme", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        ThemeMode.entries.forEach { mode ->
+                            FilterChip(
+                                selected = viewModel.themeMode == mode,
+                                onClick = { viewModel.setThemeMode(mode) },
+                                label = { Text(mode.label) },
+                                leadingIcon = { Icon(mode.icon, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
+                }
+            }
 
+            Spacer(modifier = Modifier.height(4.dp))
+
+            // ── READING ───────────────────────────────────────────────────
+            SettingsSectionLabel("Reading")
             SettingsCard {
                 SettingsToggleRow(
                     icon = { Icon(Icons.Default.SwapHoriz, contentDescription = null, modifier = Modifier.size(22.dp)) },
@@ -105,11 +126,10 @@ fun SettingsScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
-            // ── ACCOUNT section ──────────────────────────────────────────
+            // ── ACCOUNT ───────────────────────────────────────────────────
             SettingsSectionLabel("Account")
-
             SettingsCard {
                 Row(
                     modifier = Modifier
@@ -126,32 +146,37 @@ fun SettingsScreen(
                         modifier = Modifier.size(22.dp)
                     )
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Log out",
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                        Text(
-                            text = "Disconnect from Komga server",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                        )
+                        Text("Log out", style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.error)
+                        Text("Disconnect from Komga server", style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
                     }
                 }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
-
-            // Version info
             Text(
-                text = "Komga Android • v1.0.6",
+                text = "Komga Android • v1.0.8",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             )
         }
     }
+}
+
+private val ThemeMode.label get() = when (this) {
+    ThemeMode.SYSTEM -> "Auto"
+    ThemeMode.LIGHT  -> "Light"
+    ThemeMode.DARK   -> "Dark"
+    ThemeMode.AMOLED -> "AMOLED"
+}
+
+private val ThemeMode.icon: ImageVector get() = when (this) {
+    ThemeMode.SYSTEM -> Icons.Default.BrightnessAuto
+    ThemeMode.LIGHT  -> Icons.Default.LightMode
+    ThemeMode.DARK   -> Icons.Default.DarkMode
+    ThemeMode.AMOLED -> Icons.Default.DarkMode
 }
 
 @Composable
@@ -171,9 +196,7 @@ private fun SettingsCard(content: @Composable () -> Unit) {
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-    ) {
-        content()
-    }
+    ) { content() }
 }
 
 @Composable
@@ -194,16 +217,9 @@ private fun SettingsToggleRow(
     ) {
         icon()
         Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Medium
-            )
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-            )
+            Text(title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+            Text(subtitle, style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
         }
         Switch(checked = checked, onCheckedChange = onCheckedChange)
     }

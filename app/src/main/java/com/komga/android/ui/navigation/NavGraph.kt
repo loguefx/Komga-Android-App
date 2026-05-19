@@ -30,11 +30,14 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.navigation.navDeepLink
+import com.komga.android.ui.collections.CollectionDetailScreen
 import com.komga.android.ui.favorites.FavoritesScreen
 import com.komga.android.ui.home.HomeScreen
 import com.komga.android.ui.library.LibraryScreen
 import com.komga.android.ui.login.LoginScreen
 import com.komga.android.ui.reader.ReaderScreen
+import com.komga.android.ui.readlists.ReadListDetailScreen
 import com.komga.android.ui.search.SearchScreen
 import com.komga.android.ui.series.SeriesDetailScreen
 import com.komga.android.ui.settings.SettingsScreen
@@ -52,7 +55,15 @@ sealed class Screen(val route: String) {
     object Reader : Screen("reader/{bookId}") {
         fun createRoute(bookId: String) = "reader/$bookId"
     }
+    object CollectionDetail : Screen("collection/{collectionId}?name={collectionName}") {
+        fun createRoute(id: String, name: String) = "collection/$id?name=${name.encodeUrl()}"
+    }
+    object ReadListDetail : Screen("readlist/{readListId}?name={readListName}") {
+        fun createRoute(id: String, name: String) = "readlist/$id?name=${name.encodeUrl()}"
+    }
 }
+
+private fun String.encodeUrl() = java.net.URLEncoder.encode(this, "UTF-8")
 
 data class BottomNavItem(
     val label: String,
@@ -63,7 +74,7 @@ data class BottomNavItem(
 
 val bottomNavItems = listOf(
     BottomNavItem("Home", Screen.Home.route, Icons.Filled.Home, Icons.Outlined.Home),
-    BottomNavItem("Library", Screen.Library.route, Icons.AutoMirrored.Filled.LibraryBooks, Icons.AutoMirrored.Outlined.LibraryBooks),
+    BottomNavItem("Browse", Screen.Library.route, Icons.AutoMirrored.Filled.LibraryBooks, Icons.AutoMirrored.Outlined.LibraryBooks),
     BottomNavItem("Search", Screen.Search.route, Icons.Filled.Search, Icons.Outlined.Search),
     BottomNavItem("Favorites", Screen.Favorites.route, Icons.Filled.Favorite, Icons.Outlined.FavoriteBorder)
 )
@@ -139,15 +150,9 @@ fun KomgaNavGraph(
 
             composable(Screen.Home.route) {
                 HomeScreen(
-                    onSeriesClick = { seriesId ->
-                        navController.navigate(Screen.SeriesDetail.createRoute(seriesId))
-                    },
-                    onBookClick = { bookId ->
-                        navController.navigate(Screen.Reader.createRoute(bookId))
-                    },
-                    onSettingsClick = {
-                        navController.navigate(Screen.Settings.route)
-                    }
+                    onSeriesClick = { navController.navigate(Screen.SeriesDetail.createRoute(it)) },
+                    onBookClick   = { navController.navigate(Screen.Reader.createRoute(it)) },
+                    onSettingsClick = { navController.navigate(Screen.Settings.route) }
                 )
             }
 
@@ -164,47 +169,81 @@ fun KomgaNavGraph(
 
             composable(Screen.Library.route) {
                 LibraryScreen(
-                    onSeriesClick = { seriesId ->
-                        navController.navigate(Screen.SeriesDetail.createRoute(seriesId))
+                    onSeriesClick = { navController.navigate(Screen.SeriesDetail.createRoute(it)) },
+                    onCollectionClick = { id, name ->
+                        navController.navigate(Screen.CollectionDetail.createRoute(id, name))
+                    },
+                    onReadListClick = { id, name ->
+                        navController.navigate(Screen.ReadListDetail.createRoute(id, name))
                     }
                 )
             }
 
             composable(Screen.Search.route) {
                 SearchScreen(
-                    onSeriesClick = { seriesId ->
-                        navController.navigate(Screen.SeriesDetail.createRoute(seriesId))
-                    },
-                    onBookClick = { bookId ->
-                        navController.navigate(Screen.Reader.createRoute(bookId))
-                    }
+                    onSeriesClick = { navController.navigate(Screen.SeriesDetail.createRoute(it)) },
+                    onBookClick   = { navController.navigate(Screen.Reader.createRoute(it)) }
                 )
             }
 
             composable(Screen.Favorites.route) {
                 FavoritesScreen(
-                    onSeriesClick = { seriesId ->
-                        navController.navigate(Screen.SeriesDetail.createRoute(seriesId))
-                    }
+                    onSeriesClick = { navController.navigate(Screen.SeriesDetail.createRoute(it)) }
                 )
             }
 
             composable(
-                route = Screen.SeriesDetail.route,
-                arguments = listOf(navArgument("seriesId") { type = NavType.StringType })
-            ) { backStackEntry ->
-                SeriesDetailScreen(
-                    seriesId = backStackEntry.arguments?.getString("seriesId") ?: "",
-                    onBookClick = { bookId ->
-                        navController.navigate(Screen.Reader.createRoute(bookId))
-                    },
+                route = Screen.CollectionDetail.route,
+                arguments = listOf(
+                    navArgument("collectionId") { type = NavType.StringType },
+                    navArgument("collectionName") { type = NavType.StringType; defaultValue = "" }
+                )
+            ) { backStack ->
+                val name = backStack.arguments?.getString("collectionName") ?: ""
+                CollectionDetailScreen(
+                    collectionName = java.net.URLDecoder.decode(name, "UTF-8"),
+                    onSeriesClick = { navController.navigate(Screen.SeriesDetail.createRoute(it)) },
                     onBack = { navController.popBackStack() }
                 )
             }
 
             composable(
+                route = Screen.ReadListDetail.route,
+                arguments = listOf(
+                    navArgument("readListId") { type = NavType.StringType },
+                    navArgument("readListName") { type = NavType.StringType; defaultValue = "" }
+                )
+            ) { backStack ->
+                val name = backStack.arguments?.getString("readListName") ?: ""
+                ReadListDetailScreen(
+                    readListName = java.net.URLDecoder.decode(name, "UTF-8"),
+                    onBookClick = { navController.navigate(Screen.Reader.createRoute(it)) },
+                    onBack = { navController.popBackStack() }
+                )
+            }
+
+            // ── Series Detail — deep link: komga://series/{seriesId}
+            composable(
+                route = Screen.SeriesDetail.route,
+                arguments = listOf(navArgument("seriesId") { type = NavType.StringType }),
+                deepLinks = listOf(
+                    navDeepLink { uriPattern = "komga://series/{seriesId}" }
+                )
+            ) { backStack ->
+                SeriesDetailScreen(
+                    seriesId = backStack.arguments?.getString("seriesId") ?: "",
+                    onBookClick = { navController.navigate(Screen.Reader.createRoute(it)) },
+                    onBack = { navController.popBackStack() }
+                )
+            }
+
+            // ── Reader — deep link: komga://book/{bookId}
+            composable(
                 route = Screen.Reader.route,
                 arguments = listOf(navArgument("bookId") { type = NavType.StringType }),
+                deepLinks = listOf(
+                    navDeepLink { uriPattern = "komga://book/{bookId}" }
+                ),
                 enterTransition = {
                     slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Up, tween(300))
                 },
@@ -217,9 +256,9 @@ fun KomgaNavGraph(
                 popExitTransition = {
                     slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Down, tween(300))
                 }
-            ) { backStackEntry ->
+            ) { backStack ->
                 ReaderScreen(
-                    bookId = backStackEntry.arguments?.getString("bookId") ?: "",
+                    bookId = backStack.arguments?.getString("bookId") ?: "",
                     onBack = { navController.popBackStack() }
                 )
             }
