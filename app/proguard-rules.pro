@@ -1,0 +1,5 @@
+-keep class com.komga.android.data.remote.dto.** { *; }
+-keepattributes Signature
+-keepattributes *Annotation*
+-dontwarn okhttp3.**
+-dontwarn retrofit2.**
