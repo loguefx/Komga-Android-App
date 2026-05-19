@@ -4,9 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.runtime.getValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.komga.android.data.local.PreferencesDataStore
 import com.komga.android.ui.navigation.KomgaNavGraph
 import com.komga.android.ui.navigation.Screen
@@ -23,20 +21,19 @@ class MainActivity : ComponentActivity() {
     lateinit var preferencesDataStore: PreferencesDataStore
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Must be called before super.onCreate()
         val splashScreen = installSplashScreen()
-
-        var startDestination = Screen.Login.route
-        runBlocking {
-            val isLoggedIn = preferencesDataStore.isLoggedIn().first()
-            if (isLoggedIn) {
-                startDestination = Screen.Home.route
-            }
-        }
-
         splashScreen.setKeepOnScreenCondition { false }
 
+        // Hilt field injection happens inside super.onCreate()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        // Now preferencesDataStore is safely injected
+        val startDestination = runBlocking {
+            if (preferencesDataStore.isLoggedIn().first()) Screen.Home.route
+            else Screen.Login.route
+        }
 
         setContent {
             KomgaTheme {
