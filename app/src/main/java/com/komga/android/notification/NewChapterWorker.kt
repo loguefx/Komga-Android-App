@@ -10,12 +10,12 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.komga.android.MainActivity
 import com.komga.android.R
+import com.komga.android.data.local.FavoriteDao
 import com.komga.android.data.local.NotificationStateDao
 import com.komga.android.data.local.NotificationStateEntity
-import com.komga.android.data.local.FavoriteDao
 import com.komga.android.data.local.PreferencesDataStore
 import com.komga.android.data.repository.KomgaRepository
-import com.komga.android.data.repository.Result
+import com.komga.android.data.repository.Result as RepoResult
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.flow.first
@@ -42,40 +42,36 @@ class NewChapterWorker @AssistedInject constructor(
         val notificationManager =
             context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        var notifiedCount = 0
-
         for (favorite in favorites) {
             val seriesId = favorite.seriesId
             val seriesTitle = favorite.title
 
-            // Fetch current chapter count from Komga
-            val booksResult = repository.getBooksBySeries(seriesId, size = 1)
-            // We only need the total count; fetch the actual total from a larger call
+            // Fetch current chapter count for this series from Komga
             val countResult = repository.getSeriesById(seriesId)
-            if (countResult !is com.komga.android.data.repository.Result.Success) continue
+            if (countResult !is RepoResult.Success) continue
 
             val currentCount = countResult.data.booksCount
 
-            // Look up what count we last notified about
+            // Look up the count at which we last notified
             val state = notificationStateDao.getBySeriesId(seriesId)
             val lastNotifiedCount = state?.lastNotifiedCount ?: 0
 
             val newChapters = currentCount - lastNotifiedCount
 
             if (newChapters > 0 && lastNotifiedCount > 0) {
-                // There are genuinely NEW chapters since the last notification
+                // Genuine new chapters since last notification — notify once
                 showNotification(
-                    context = context,
                     notificationManager = notificationManager,
                     seriesId = seriesId,
                     seriesTitle = seriesTitle,
                     newChapterCount = newChapters,
                     totalChapterCount = currentCount
                 )
-                notifiedCount++
             }
 
-            // Always sync the stored count to current (even on first run, no notification)
+            // Always persist the latest known count so future runs have a baseline.
+            // On the very first run lastNotifiedCount == 0, so we silently record the
+            // current count without showing a notification.
             notificationStateDao.upsert(
                 NotificationStateEntity(
                     seriesId = seriesId,
@@ -89,7 +85,6 @@ class NewChapterWorker @AssistedInject constructor(
     }
 
     private fun showNotification(
-        context: Context,
         notificationManager: NotificationManager,
         seriesId: String,
         seriesTitle: String,
@@ -108,12 +103,15 @@ class NewChapterWorker @AssistedInject constructor(
 
         val chapterWord = if (newChapterCount == 1) "chapter" else "chapters"
         val notification = NotificationCompat.Builder(context, NOTIFICATION_CHANNEL_NEW_CHAPTERS)
-            .setSmallIcon(R.drawable.ic_launcher)
+            .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle(seriesTitle)
             .setContentText("$newChapterCount new $chapterWord available  •  $totalChapterCount total")
             .setStyle(
                 NotificationCompat.BigTextStyle()
-                    .bigText("$newChapterCount new $chapterWord available. Series now has $totalChapterCount chapters.")
+                    .bigText(
+                        "$newChapterCount new $chapterWord available. " +
+                        "Series now has $totalChapterCount chapters."
+                    )
             )
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
@@ -121,7 +119,7 @@ class NewChapterWorker @AssistedInject constructor(
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .build()
 
-        // Use seriesId hashCode as unique notification ID so each series gets its own notification
+        // Each series gets its own notification slot (based on seriesId hashCode)
         notificationManager.notify(seriesId.hashCode(), notification)
     }
 }

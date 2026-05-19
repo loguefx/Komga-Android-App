@@ -87,7 +87,7 @@ fun LibraryScreen(
                     },
                     actions = {
                         // Sort button + dropdown
-                        androidx.compose.runtime.Box {
+                        Box {
                             IconButton(onClick = viewModel::toggleSortMenu) {
                                 Icon(Icons.Default.Sort, contentDescription = "Sort")
                             }
