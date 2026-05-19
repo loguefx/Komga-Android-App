@@ -32,12 +32,12 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun setDefaultRtl(value: Boolean) {
+    fun onDefaultRtlChanged(value: Boolean) {
         defaultRtl = value
         viewModelScope.launch { preferencesDataStore.saveDefaultRtl(value) }
     }
 
-    fun setThemeMode(mode: ThemeMode) {
+    fun onThemeModeChanged(mode: ThemeMode) {
         themeMode = mode
         viewModelScope.launch { preferencesDataStore.saveThemeMode(mode) }
     }

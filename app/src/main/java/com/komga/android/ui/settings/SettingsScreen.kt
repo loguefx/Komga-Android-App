@@ -102,7 +102,7 @@ fun SettingsScreen(
                         ThemeMode.entries.forEach { mode ->
                             FilterChip(
                                 selected = viewModel.themeMode == mode,
-                                onClick = { viewModel.setThemeMode(mode) },
+                                onClick = { viewModel.onThemeModeChanged(mode) },
                                 label = { Text(mode.label) },
                                 leadingIcon = { Icon(mode.icon, contentDescription = null, modifier = Modifier.size(16.dp)) },
                                 modifier = Modifier.weight(1f)
@@ -122,7 +122,7 @@ fun SettingsScreen(
                     title = "Default RTL mode",
                     subtitle = "Right-to-left reading (recommended for manga)",
                     checked = viewModel.defaultRtl,
-                    onCheckedChange = viewModel::setDefaultRtl
+                    onCheckedChange = viewModel::onDefaultRtlChanged
                 )
             }
 
