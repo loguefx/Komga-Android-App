@@ -34,6 +34,7 @@ class HomeViewModel @Inject constructor(
     }
 
     fun loadHome() {
+        if (_uiState.value.isLoading) return
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
